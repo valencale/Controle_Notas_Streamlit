@@ -1,10 +1,22 @@
 import streamlit as st
 import functools
 
-USERS = {
-    "admin": {"name": "Administrador", "password": "admin", "role": "ADM"},
-    "visita": {"name": "Visitante", "password": "123", "role": "Visitante"}
-}
+# Tentativa de carregar credenciais do secrets.toml (se configurado)
+try:
+    admin_user = st.secrets.get("admin", {}).get("username", "admin")
+    admin_pass = st.secrets.get("admin", {}).get("password", "admin_teste")
+    visita_user = st.secrets.get("visitante", {}).get("username", "visita")
+    visita_pass = st.secrets.get("visitante", {}).get("password", "123")
+    
+    USERS = {
+        admin_user: {"name": "Administrador", "password": admin_pass, "role": "ADM"},
+        visita_user: {"name": "Visitante", "password": visita_pass, "role": "Visitante"}
+    }
+except Exception:
+    USERS = {
+        "admin": {"name": "Administrador", "password": "admin", "role": "ADM"},
+        "visita": {"name": "Visitante", "password": "123", "role": "Visitante"}
+    }
 
 def init_auth():
     if "authenticated" not in st.session_state:
