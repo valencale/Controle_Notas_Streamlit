@@ -1,89 +1,0 @@
-
--------------------------------------------------------------------------------
-   ROBOCOPY     ::     Robust File Copy para Windows                              
--------------------------------------------------------------------------------
-
-  Iniciado: sexta-feira, 15 de maio de 2026 10:55:28
-   Origem : C:\Users\User\.gemini\antigravity\scratch\streamlit-logistica\
-     Dest : D:\Controle_Notas\
-
-    Arquivos: *.*
-	    
-Arquivos Exc: debug.txt
-	    debug_pdf.py
-	    test_extraction.py
-	    verify_excel.py
-	    
- Diret¢rios Exc: venv
-	    __pycache__
-	    .streamlit
-	    
-  Op‡äes: *.* /S /E /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
-
-------------------------------------------------------------------------------
-
-	                   7	C:\Users\User\.gemini\antigravity\scratch\streamlit-logistica\
-	*Dir EXTRA        -1	D:\Controle_Notas\.agent\
-	*Dir EXTRA        -1	D:\Controle_Notas\.agents\
-	*Dir EXTRA        -1	D:\Controle_Notas\.claude-plugin\
-	*Dir EXTRA        -1	D:\Controle_Notas\.gemini\
-	*Dir EXTRA        -1	D:\Controle_Notas\.github\
-	*Dir EXTRA        -1	D:\Controle_Notas\apps\
-	*Dir EXTRA        -1	D:\Controle_Notas\assets\
-	*Dir EXTRA        -1	D:\Controle_Notas\data\
-	*Dir EXTRA        -1	D:\Controle_Notas\docs\
-	*Dir EXTRA        -1	D:\Controle_Notas\docs_zh-CN\
-	*Dir EXTRA        -1	D:\Controle_Notas\plugins\
-	*Dir EXTRA        -1	D:\Controle_Notas\scripts\
-	*Dir EXTRA        -1	D:\Controle_Notas\skills\
-	*Dir EXTRA        -1	D:\Controle_Notas\skill_categorization\
-	*Dir EXTRA        -1	D:\Controle_Notas\tools\
-	  *Arquivo EXTRA		     916	.gitignore
-	  *Arquivo EXTRA		  140997	Bioma_Exemplo.png
-	  *Arquivo EXTRA		  417728	CATALOG.md
-	  *Arquivo EXTRA		  245221	CHANGELOG.md
-	  *Arquivo EXTRA		    2923	CODE_OF_CONDUCT.md
-	  *Arquivo EXTRA		   14433	CONTRIBUTING.md
-	  *Arquivo EXTRA		   33080	CONTROLE NOTAS old.xlsm
-	  *Arquivo EXTRA		   45490	CONTROLE NOTAS.xlsm
-	  *Arquivo EXTRA		   94793	Extracao_Word_Onfinity_exemplo.png
-	  *Arquivo EXTRA		    1073	LICENSE
-	  *Arquivo EXTRA		     652	LICENSE-CONTENT
-	  *Arquivo EXTRA		     839	package-lock.json
-	  *Arquivo EXTRA		    5517	package.json
-	  *Arquivo EXTRA		   1.2 m	Pedido_Sep_B55.pdf
-	  *Arquivo EXTRA		   27823	Pedido_teste.pdf
-	  *Arquivo EXTRA		   50790	README.md
-	  *Arquivo EXTRA		       0	robocopy.log
-	  *Arquivo EXTRA		     770	SECURITY.md
-	  *Arquivo EXTRA		  922073	skills_index.json
-	  *Arquivo EXTRA		    1423	START_APP.bat
-	  *Arquivo EXTRA		   21696	walkthrough.md
-	  Novo Arquivo		    5456	app.py100%  
-	  Novo Arquivo		    4683	config.py100%  
-	  Novo Arquivo		     120	requirements.txt100%  
-	    Novo Dir       5	C:\Users\User\.gemini\antigravity\scratch\streamlit-logistica\modules\
-	  Novo Arquivo		   16033	excel_handler.py100%  
-	  Novo Arquivo		    3967	geocoder.py100%  
-	  Novo Arquivo		   21996	pdf_parser.py100%  
-	  Novo Arquivo		   12215	ui_components.py100%  
-	  Novo Arquivo		      22	__init__.py100%  
-	    Novo Dir       4	C:\Users\User\.gemini\antigravity\scratch\streamlit-logistica\pages\
-	  Novo Arquivo		   13500	1_??_Esteira.py100%  
-	  Novo Arquivo		    7394	2_??_Historico.py100%  
-	  Novo Arquivo		   10729	3_??_Ingestao_PDF.py100%  
-	  Novo Arquivo		    8617	4_???_Mapa.py100%  
-
-------------------------------------------------------------------------------
-
-               Total   Copiada  IgnoradaIncompatibilidade     FALHA    Extras
-Diret¢rios:         7         2         5         0         0        15
- Arquivos:        16        12         4         0         0        21
-    Bytes:   108.6 k   102.2 k     6.3 k         0         0    3.19 m
-N.§ de Vezes:   0:00:00   0:00:00                       0:00:00   0:00:00
-
-
-Velocidade:             9521090 Bytes/s.
-Velocidade:             544.801 MegaBytes/min.
-   Finalizado em: sexta-feira, 15 de maio de 2026 10:55:28
-
