@@ -52,7 +52,6 @@ skills/spline-3d-integration/*.zip
 armazem_venv/
 *_backup_*.xlsm
 *.pdf
-!*_Exemplo.pdf
 *_cache.xlsx
 *_cache.csv
 
