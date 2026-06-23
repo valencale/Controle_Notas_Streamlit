@@ -138,6 +138,7 @@ def resumo_expedicoes_ativas() -> str:
 
 def analisar_historico_cliente(nome_cliente: str) -> str:
     """Busca entregas de um cliente em TODAS as fontes: aba Historico, aba Dados e Relatório de Entregas.
+    Use quando NÃO houver filtro de data. Para filtrar por período, use consultar_entregas_por_periodo.
     Argumentos:
         nome_cliente: Nome parcial ou completo do cliente.
     """
@@ -216,6 +217,134 @@ def analisar_historico_cliente(nome_cliente: str) -> str:
     except Exception as e:
         return f"Erro ao consultar cliente: {str(e)}"
 
+def consultar_entregas_por_periodo(nome_cliente: str, data_inicio: str, data_fim: str) -> str:
+    """Busca entregas de um cliente filtradas por período de datas em TODAS as fontes.
+    SEMPRE use esta ferramenta quando o usuário perguntar sobre entregas em uma data, semana, mês ou período específico.
+    Argumentos:
+        nome_cliente: Nome parcial ou completo do cliente (ex: 'BRF', 'AMBEV').
+        data_inicio: Data inicial no formato DD/MM/AAAA (ex: '22/06/2026').
+        data_fim: Data final no formato DD/MM/AAAA (ex: '23/06/2026'). Use a mesma data de inicio se for apenas um dia.
+    """
+    try:
+        from modules.excel_handler import read_historico, read_principal
+        from datetime import datetime
+        import pandas as pd
+        
+        # Parsear as datas
+        try:
+            dt_inicio = pd.to_datetime(data_inicio, format='%d/%m/%Y')
+            dt_fim = pd.to_datetime(data_fim, format='%d/%m/%Y')
+        except Exception:
+            return f"Formato de data inválido. Use DD/MM/AAAA. Recebido: início='{data_inicio}', fim='{data_fim}'."
+        
+        # Incluir o dia final inteiro (até 23:59:59)
+        dt_fim = dt_fim + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+        
+        all_results = []
+        totais = {}
+        
+        # Colunas de data conhecidas em cada fonte
+        DATE_COLS = ["DATA", "DATA_ENTREGA", "DATA_EXPEDICAO", "DT_ENTREGA", "DATA_NF"]
+        
+        def _find_date_col(df):
+            """Encontra a coluna de data disponível no DataFrame."""
+            for col in DATE_COLS:
+                if col in df.columns:
+                    return col
+            # Tenta qualquer coluna que tenha 'DATA' no nome
+            for col in df.columns:
+                if "DATA" in col.upper():
+                    return col
+            return None
+        
+        def _filter_by_client_and_date(df, fonte_name):
+            """Filtra DataFrame por cliente E data."""
+            if df.empty:
+                return
+            
+            # Filtro de cliente
+            client_col = None
+            for col in ["CLIENTE", "REMETENTE"]:
+                if col in df.columns:
+                    client_col = col
+                    break
+            if client_col is None:
+                return
+            
+            mask_cliente = df[client_col].astype(str).str.contains(nome_cliente, case=False, na=False)
+            
+            # Filtro de data
+            date_col = _find_date_col(df)
+            if date_col is None:
+                # Sem coluna de data, retorna só filtro de cliente
+                found = df[mask_cliente]
+                if not found.empty:
+                    found = found.copy()
+                    found["_FONTE"] = fonte_name
+                    found["_OBS"] = "Sem coluna de data para filtrar período"
+                    totais[fonte_name] = len(found)
+                    all_results.append(found)
+                return
+            
+            # Converter coluna de data
+            df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+            mask_data = (df[date_col] >= dt_inicio) & (df[date_col] <= dt_fim)
+            
+            found = df[mask_cliente & mask_data]
+            if not found.empty:
+                found = found.copy()
+                found["_FONTE"] = fonte_name
+                totais[fonte_name] = len(found)
+                all_results.append(found)
+        
+        # 1. Aba Historico
+        try:
+            df_h = read_historico()
+            _filter_by_client_and_date(df_h, "Historico")
+        except Exception:
+            pass
+        
+        # 2. Aba Dados (principal)
+        try:
+            df_p = read_principal()
+            _filter_by_client_and_date(df_p, "Dados")
+        except Exception:
+            pass
+        
+        # 3. Relatório de Entregas
+        try:
+            from modules.delivery_reader import read_deliveries_report
+            df_r = read_deliveries_report()
+            # No relatório de entregas, o cliente pode estar em REMETENTE ou CLIENTE
+            _filter_by_client_and_date(df_r, "Relatório de Entregas")
+        except Exception:
+            pass
+        
+        if not all_results:
+            return (
+                f"Nenhuma entrega encontrada para '{nome_cliente}' "
+                f"no período de {data_inicio} a {data_fim} em nenhuma das bases de dados."
+            )
+        
+        match = pd.concat(all_results, ignore_index=True)
+        total = len(match)
+        resumo_fontes = ", ".join([f"{fonte}: {qtd}" for fonte, qtd in totais.items()])
+        
+        # Limpa formato numérico
+        for col in ["PEDIDO", "NF", "NOTA_FISCAL"]:
+            if col in match.columns:
+                match[col] = match[col].astype(str).str.replace(r'\.0$', '', regex=True)
+        
+        # Para resultados grandes, retornar resumo + dados
+        header = (
+            f"Total: {total} registros de '{nome_cliente}' entre {data_inicio} e {data_fim}. "
+            f"Fontes: {resumo_fontes}.\n\n"
+        )
+        
+        return header + match.to_json(orient="records", force_ascii=False)
+    except Exception as e:
+        return f"Erro ao consultar entregas por período: {str(e)}"
+
 def get_gemini_client():
     if "gemini_client" not in st.session_state:
         api_key = st.secrets.get("gemini", {}).get("api_key")
@@ -244,7 +373,11 @@ def get_chat_session():
         
         sys_instruction = get_system_context()
         sys_instruction += "\n\nREGRA DE OURO PARA USO DE DADOS:\nVocê é um Agente Autônomo com acesso a ferramentas de banco de dados e documentos (RAG).\nSEMPRE utilize as ferramentas (tools) fornecidas para consultar pedidos, NFs, clientes, expedições ou documentos ANTES de responder.\nNÃO TENTE INVENTAR DADOS. NUNCA DIGA QUE VOCÊ NÃO TEM ACESSO AO SISTEMA EXTERNO. VOCÊ TEM AS FERRAMENTAS PARA ISSO.\n"
-        sys_instruction += "\n- Para pesquisar NFs ou Pedidos antigos e de hoje, use a ferramenta 'consultar_pedido_ou_nf'.\n- Para saber quem está viajando hoje, veículos ou entregas atuais, use a ferramenta 'resumo_expedicoes_ativas'.\n- Para pesquisar o histórico de um cliente, use a ferramenta 'analisar_historico_cliente'.\n- Para perguntas gerais, PDFs ou dados amplos, use a ferramenta 'buscar_em_documentos'."
+        sys_instruction += "\n- Para pesquisar NFs ou Pedidos antigos e de hoje, use a ferramenta 'consultar_pedido_ou_nf'."
+        sys_instruction += "\n- Para saber quem está viajando hoje, veículos ou entregas atuais, use a ferramenta 'resumo_expedicoes_ativas'."
+        sys_instruction += "\n- Para pesquisar o histórico GERAL de um cliente (sem filtro de data), use 'analisar_historico_cliente'."
+        sys_instruction += "\n- IMPORTANTE: Quando o usuário perguntar sobre entregas em uma DATA, SEMANA, MÊS ou PERÍODO específico (ex: 'essa semana', 'dia 22', 'em junho'), use OBRIGATORIAMENTE a ferramenta 'consultar_entregas_por_periodo'. Converta datas relativas (hoje, essa semana, este mês) para o formato DD/MM/AAAA."
+        sys_instruction += "\n- Para perguntas gerais, PDFs ou dados amplos, use a ferramenta 'buscar_em_documentos'."
         sys_instruction += "\n1. VOCÊ É ESTRITAMENTE PROIBIDA DE INVENTAR OU ALUCINAR INFORMAÇÕES.\n"
         
         # Inicia o chat usando o modelo escolhido
@@ -253,7 +386,7 @@ def get_chat_session():
             config=types.GenerateContentConfig(
                 system_instruction=sys_instruction,
                 temperature=0.2,
-                tools=[consultar_pedido_ou_nf, resumo_expedicoes_ativas, analisar_historico_cliente, buscar_em_documentos]
+                tools=[consultar_pedido_ou_nf, resumo_expedicoes_ativas, analisar_historico_cliente, consultar_entregas_por_periodo, buscar_em_documentos]
             )
         )
 
