@@ -55,9 +55,9 @@ def normalize_veiculo(plate_str) -> str:
 
 
 def _ensure_cache():
-    """Verifica se o cache xlsx existe e é valido."""
+    """Verifica se o cache xlsx existe e é valido. No Linux, lê .xlsb direto."""
     if os.path.exists(CACHE_XLSX):
-        return True
+        return "cache"
 
     if not os.path.exists(DELIVERIES_REPORT_PATH):
         raise FileNotFoundError(
@@ -65,7 +65,7 @@ def _ensure_cache():
             f"Coloque o 'RELATÓRIO DE ENTREGAS 2026_LEVE.xlsb' na raiz do projeto."
         )
 
-    # Try COM conversion
+    # No Windows, tenta converter via COM
     try:
         import win32com.client
         excel = win32com.client.Dispatch("Excel.Application")
@@ -78,16 +78,14 @@ def _ensure_cache():
             if wb:
                 wb.SaveAs(os.path.abspath(CACHE_XLSX), 51)
                 wb.Close(False)
-                return True
+                return "cache"
         finally:
             excel.Quit()
     except Exception:
         pass
 
-    raise FileNotFoundError(
-        f"Cache '{CACHE_XLSX}' não encontrado.\n"
-        f"Execute: python scratch/convert_com.py"
-    )
+    # No Linux (Streamlit Cloud), lê o .xlsb direto com pyxlsb
+    return "xlsb_direct"
 
 
 # ══════════════════════════════════════════════════════════════
@@ -96,16 +94,19 @@ def _ensure_cache():
 
 def read_deliveries_report() -> pd.DataFrame:
     """
-    Lê o relatório de entregas do cache XLSX.
+    Lê o relatório de entregas do cache XLSX ou diretamente do .xlsb.
 
     Returns:
         DataFrame limpo com colunas padronizadas.
     """
-    _ensure_cache()
+    source = _ensure_cache()
 
-    # Read xlsx - skip row 0 (summary) and row 1 (header "Mês", "Data"...)
-    # We assign our own column names
-    df = pd.read_excel(CACHE_XLSX, engine="openpyxl", skiprows=2, header=None)
+    if source == "cache":
+        # Lê do cache xlsx convertido
+        df = pd.read_excel(CACHE_XLSX, engine="openpyxl", skiprows=2, header=None)
+    else:
+        # Lê direto do .xlsb com pyxlsb (Linux/Streamlit Cloud)
+        df = pd.read_excel(DELIVERIES_REPORT_PATH, engine="pyxlsb", skiprows=2, header=None)
 
     # Detect if column 0 is blank (original file) or has data (new lighter file)
     first_col_blank = df.iloc[:, 0].isna().all() or (df.iloc[:, 0].astype(str).str.strip() == "").all()
