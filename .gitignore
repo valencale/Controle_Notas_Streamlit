@@ -46,15 +46,29 @@ apps/web-app/public/skills.json
 # Local duplicate/download artifacts
 skills/spline-3d-integration/*.zip
 
+# ═══════════════════════════════════════════════════════════
+# 🔒 SEGURANÇA — Nunca subir dados reais ou chaves
+# ═══════════════════════════════════════════════════════════
 .streamlit/secrets.toml
+*.env
+.env.*
+
+# Planilhas com dados reais de clientes
+*.xlsm
+*.xlsb
+*.xlsx
+!secrets_example.toml
+!*.example.*
 
 # Ignorados específicos do projeto (evitar arquivos pesados e dados sensíveis)
 armazem_venv/
-*_backup_*.xlsm
+*_backup_*
 *.pdf
 !*_Exemplo.pdf
 *_cache.xlsx
 *_cache.csv
+ocorrencias_gia.txt
+entregas_cache.*
 
 # Pastas de Inteligência Artificial e Agente Local
 plugins/
