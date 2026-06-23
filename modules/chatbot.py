@@ -30,13 +30,15 @@ def get_system_context() -> str:
     return context
 
 def consultar_pedido_ou_nf(codigo: str) -> str:
-    """Busca em todo o histórico (Excel) o status de um pedido ou NF (mesmo antigo).
+    """Busca em TODAS as fontes de dados (Historico, Dados, Relatório de Entregas) o status de um pedido ou NF.
     Argumentos:
         codigo: A numeração exata do Pedido ou da NF a ser buscada.
     """
     try:
         from modules.excel_handler import read_historico, read_principal
         import pandas as pd
+        
+        all_results = []
         
         def is_match(series: pd.Series, target: str) -> pd.Series:
             # Tenta match exato string
@@ -48,36 +50,66 @@ def consultar_pedido_ou_nf(codigo: str) -> str:
                 return mask_str | mask_num
             except:
                 return mask_str
-                
-        # Tenta no historico
-        df = read_historico()
-        mask = is_match(df["PEDIDO"], codigo) | is_match(df["NF"], codigo)
-        match = df[mask]
         
-        # Tenta no principal se nao achou
-        if match.empty:
+        # 1. Busca no Historico (aba Historico do CONTROLE NOTAS)
+        try:
+            df_h = read_historico()
+            if not df_h.empty:
+                mask_h = pd.Series(False, index=df_h.index)
+                if "PEDIDO" in df_h.columns:
+                    mask_h = mask_h | is_match(df_h["PEDIDO"], codigo)
+                if "NF" in df_h.columns:
+                    mask_h = mask_h | is_match(df_h["NF"], codigo)
+                found_h = df_h[mask_h]
+                if not found_h.empty:
+                    found_h = found_h.copy()
+                    found_h["_FONTE"] = "Historico"
+                    all_results.append(found_h)
+        except Exception:
+            pass
+        
+        # 2. Busca na aba Dados (aba principal do CONTROLE NOTAS)
+        try:
             df_p = read_principal()
             if not df_p.empty:
-                mask_p = is_match(df_p["PEDIDO"], codigo) | is_match(df_p["NF"], codigo)
-                match = df_p[mask_p]
+                mask_p = pd.Series(False, index=df_p.index)
+                if "PEDIDO" in df_p.columns:
+                    mask_p = mask_p | is_match(df_p["PEDIDO"], codigo)
+                if "NF" in df_p.columns:
+                    mask_p = mask_p | is_match(df_p["NF"], codigo)
+                found_p = df_p[mask_p]
+                if not found_p.empty:
+                    found_p = found_p.copy()
+                    found_p["_FONTE"] = "Dados"
+                    all_results.append(found_p)
+        except Exception:
+            pass
         
-        # Tenta no relatorio de entregas
-        if match.empty:
-            try:
-                from modules.delivery_reader import read_deliveries_report
-                df_r = read_deliveries_report()
-                if not df_r.empty and "NF" in df_r.columns:
-                    mask_r = is_match(df_r["NF"], codigo)
-                    match = df_r[mask_r]
-            except Exception:
-                pass
-                
-        if match.empty:
-            return f"Não encontrei nenhum pedido ou NF correspondente a '{codigo}' na base de dados."
-            
+        # 3. Busca no Relatório de Entregas (coluna NOTA_FISCAL, não NF)
+        try:
+            from modules.delivery_reader import read_deliveries_report
+            df_r = read_deliveries_report()
+            if not df_r.empty:
+                mask_r = pd.Series(False, index=df_r.index)
+                if "NOTA_FISCAL" in df_r.columns:
+                    mask_r = mask_r | is_match(df_r["NOTA_FISCAL"], codigo)
+                if "NF" in df_r.columns:
+                    mask_r = mask_r | is_match(df_r["NF"], codigo)
+                found_r = df_r[mask_r]
+                if not found_r.empty:
+                    found_r = found_r.copy()
+                    found_r["_FONTE"] = "Relatório de Entregas"
+                    all_results.append(found_r)
+        except Exception:
+            pass
+        
+        if not all_results:
+            return f"Não encontrei nenhum pedido ou NF correspondente a '{codigo}' em nenhuma das bases (Dados, Historico, Relatório de Entregas)."
+        
+        match = pd.concat(all_results, ignore_index=True)
+        
         # Limpa formato numérico para remover .0
-        match = match.copy()
-        for col in ["PEDIDO", "NF"]:
+        for col in ["PEDIDO", "NF", "NOTA_FISCAL"]:
             if col in match.columns:
                 match[col] = match[col].astype(str).str.replace(r'\.0$', '', regex=True)
                 
@@ -105,28 +137,78 @@ def resumo_expedicoes_ativas() -> str:
         return f"Erro ao buscar resumo: {str(e)}"
 
 def analisar_historico_cliente(nome_cliente: str) -> str:
-    """Busca entregas para um determinado cliente. Se houver muitos resultados, pedirá refinamento.
+    """Busca entregas de um cliente em TODAS as fontes: aba Historico, aba Dados e Relatório de Entregas.
     Argumentos:
         nome_cliente: Nome parcial ou completo do cliente.
     """
     try:
-        from modules.excel_handler import read_historico
-        df = read_historico()
-        if "CLIENTE" not in df.columns:
-            return "A coluna CLIENTE não existe no histórico."
+        from modules.excel_handler import read_historico, read_principal
+        import pandas as pd
         
-        mask = df["CLIENTE"].str.contains(nome_cliente, case=False, na=False)
-        match = df[mask]
+        totais = {}  # {fonte: contagem}
+        all_results = []
         
-        if match.empty:
-            return f"Nenhuma entrega encontrada para o cliente '{nome_cliente}'."
-            
-        if len(match) > 10:
-            return f"Encontrei {len(match)} entregas para '{nome_cliente}'. Informe ao usuário exatamente assim: 'Todas, ou as ultimas 10? lembrando que quao maior for, maior meu consumo'"
-            
+        # 1. Aba Historico do CONTROLE NOTAS
+        try:
+            df_h = read_historico()
+            if not df_h.empty and "CLIENTE" in df_h.columns:
+                mask_h = df_h["CLIENTE"].str.contains(nome_cliente, case=False, na=False)
+                found_h = df_h[mask_h]
+                if not found_h.empty:
+                    found_h = found_h.copy()
+                    found_h["_FONTE"] = "Historico"
+                    totais["Historico"] = len(found_h)
+                    all_results.append(found_h)
+        except Exception:
+            pass
+        
+        # 2. Aba Dados (principal) do CONTROLE NOTAS
+        try:
+            df_p = read_principal()
+            if not df_p.empty and "CLIENTE" in df_p.columns:
+                mask_p = df_p["CLIENTE"].str.contains(nome_cliente, case=False, na=False)
+                found_p = df_p[mask_p]
+                if not found_p.empty:
+                    found_p = found_p.copy()
+                    found_p["_FONTE"] = "Dados"
+                    totais["Dados"] = len(found_p)
+                    all_results.append(found_p)
+        except Exception:
+            pass
+        
+        # 3. Relatório de Entregas
+        try:
+            from modules.delivery_reader import read_deliveries_report
+            df_r = read_deliveries_report()
+            if not df_r.empty and "CLIENTE" in df_r.columns:
+                mask_r = df_r["CLIENTE"].str.contains(nome_cliente, case=False, na=False)
+                found_r = df_r[mask_r]
+                if not found_r.empty:
+                    found_r = found_r.copy()
+                    found_r["_FONTE"] = "Relatório de Entregas"
+                    totais["Relatório de Entregas"] = len(found_r)
+                    all_results.append(found_r)
+        except Exception:
+            pass
+        
+        if not all_results:
+            return f"Nenhuma entrega encontrada para o cliente '{nome_cliente}' em nenhuma base de dados."
+        
+        total_geral = sum(totais.values())
+        resumo_fontes = ", ".join([f"{fonte}: {qtd}" for fonte, qtd in totais.items()])
+        
+        if total_geral > 10:
+            return (
+                f"Encontrei {total_geral} registros para '{nome_cliente}' nas seguintes fontes: {resumo_fontes}. "
+                f"Informe ao usuário exatamente assim: 'Encontrei {total_geral} registros de {nome_cliente} "
+                f"({resumo_fontes}). Deseja ver todas, as últimas 10, ou filtrar por uma fonte específica? "
+                f"Lembrando que quanto maior o volume, maior meu consumo.'"
+            )
+        
+        match = pd.concat(all_results, ignore_index=True)
+        
         # Limpa formato numérico para remover .0
-        match = match.copy()
-        for col in ["PEDIDO", "NF"]:
+        for col in ["PEDIDO", "NF", "NOTA_FISCAL"]:
             if col in match.columns:
                 match[col] = match[col].astype(str).str.replace(r'\.0$', '', regex=True)
                 

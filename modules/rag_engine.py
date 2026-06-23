@@ -82,7 +82,7 @@ def rebuild_index(base_dir):
 
     chunks = []
 
-    # 1. Planilhas Excel
+    # 1. Planilhas Excel — lê TODAS as abas de cada arquivo
     excel_files = [
         "CONTROLE NOTAS.xlsm",
         "RELATÓRIO DE ENTREGAS 2026_LEVE.xlsb",
@@ -93,8 +93,11 @@ def rebuild_index(base_dir):
         if os.path.exists(path):
             try:
                 engine = "pyxlsb" if path.endswith(".xlsb") else "openpyxl"
-                df = pd.read_excel(path, engine=engine)
-                chunks.extend(_ingest_dataframe(df, file))
+                # sheet_name=None retorna um dict {nome_aba: DataFrame}
+                sheets = pd.read_excel(path, engine=engine, sheet_name=None)
+                for sheet_name, df in sheets.items():
+                    source = f"{file} → {sheet_name}"
+                    chunks.extend(_ingest_dataframe(df, source))
             except Exception as e:
                 print(f"Erro ao ler {file}: {e}")
 
