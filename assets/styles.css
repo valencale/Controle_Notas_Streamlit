@@ -774,3 +774,295 @@ div[data-testid="stStatusWidget"] p {
 .animate-in {
     animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   📱 MOBILE-FIRST RESPONSIVE (≤ 768px)
+   Touch-first · Performance-conscious · Thumb-zone aware
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* ── PERFORMANCE: Desativa efeitos pesados no mobile ── */
+    .main-header,
+    div[data-testid="stMetric"],
+    .pedido-card,
+    div[data-testid="stFileUploader"],
+    .stTabs [data-baseweb="tab-list"],
+    .gb-toolbar-btn,
+    div[data-testid="stPopoverBody"] {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
+    /* Desativa hover transforms (inúteis no touch) */
+    div[data-testid="stMetric"]:hover,
+    .pedido-card:hover,
+    .stButton > button:hover,
+    button[kind="secondary"]:hover,
+    button[kind="primary"]:hover,
+    .gb-toolbar-btn:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    /* ── TIPOGRAFIA LEGÍVEL ── */
+    .stApp {
+        font-size: 16px !important;
+    }
+
+    .main-header h1 {
+        font-size: 22px !important;
+        line-height: 1.3 !important;
+    }
+    .main-header .subtitle {
+        font-size: 14px !important;
+    }
+
+    /* Labels e captions: mínimo 14px */
+    div[data-testid="stMetric"] label {
+        font-size: 12px !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+        font-size: 28px !important;
+    }
+
+    .pedido-number {
+        font-size: 20px !important;
+    }
+    .pedido-cliente {
+        font-size: 16px !important;
+    }
+    .pedido-empresa {
+        font-size: 12px !important;
+    }
+    .pedido-obs {
+        font-size: 14px !important;
+        padding: 12px 14px !important;
+    }
+    .status-badge {
+        font-size: 11px !important;
+        padding: 6px 12px !important;
+        min-height: 32px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* ── HEADER COMPACTO ── */
+    .main-header {
+        padding: 16px 18px !important;
+        border-radius: 14px !important;
+        margin-bottom: 16px !important;
+        box-shadow: 0 4px 16px var(--gb-shadow) !important;
+    }
+
+    /* ── TOUCH TARGETS ≥ 48px ── */
+    .stButton > button,
+    button[kind="secondary"],
+    button[kind="primary"],
+    div[data-testid="stBaseButton-secondary"] > button,
+    .stFormSubmitButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        min-height: 48px !important;
+        padding: 14px 20px !important;
+        font-size: 15px !important;
+        border-radius: 14px !important;
+    }
+
+    /* Inputs: 16px evita zoom no iOS */
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stNumberInput"] input,
+    input[type="password"],
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    textarea {
+        font-size: 16px !important;
+        min-height: 48px !important;
+        padding: 14px 16px !important;
+        border-radius: 12px !important;
+    }
+
+    /* Selectbox: altura mínima */
+    div[data-testid="stSelectbox"] > div > div,
+    div[data-testid="stMultiSelect"] > div > div {
+        min-height: 48px !important;
+        font-size: 15px !important;
+        border-radius: 12px !important;
+    }
+
+    /* ── PEDIDO CARDS MOBILE ── */
+    .pedido-card {
+        padding: 16px !important;
+        margin-bottom: 12px !important;
+        border-radius: 14px !important;
+    }
+    /* Força layout vertical no card */
+    .pedido-card > div:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+    .pedido-card > div:first-child > div:first-child {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    /* ── KPI CARDS MOBILE ── */
+    div[data-testid="stMetric"] {
+        padding: 14px 16px !important;
+        border-radius: 12px !important;
+    }
+
+    /* Força colunas Streamlit a empilhar verticalmente */
+    div[data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+        min-width: 45% !important;
+        flex: 1 1 45% !important;
+    }
+
+    /* ── TABS: Scroll horizontal ── */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: nowrap !important;
+        padding: 4px !important;
+        gap: 4px !important;
+        border-radius: 10px !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        font-size: 13px !important;
+        padding: 10px 14px !important;
+        min-height: 44px !important;
+    }
+    /* Esconde scrollbar mantendo funcionalidade */
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+        display: none;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    /* ── CHAT POPOVER FULLSCREEN ── */
+    div[data-testid="stPopoverBody"] {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        height: 80vh !important;
+        max-height: 80vh !important;
+        border-radius: 16px 16px 0 0 !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 2.5vw !important;
+        right: 2.5vw !important;
+    }
+
+    /* Chat input mobile */
+    div[data-testid="stChatInput"] textarea {
+        font-size: 16px !important;
+        min-height: 48px !important;
+    }
+
+    /* Chat button mobile: maior para toque */
+    [data-gb-chat="1"] > button,
+    [data-gb-chat="1"] > div > button {
+        width: 48px !important;
+        height: 48px !important;
+        top: 10px !important;
+    }
+    [data-gb-chat="1"] > button p,
+    [data-gb-chat="1"] > div > button p {
+        font-size: 22px !important;
+    }
+
+    /* ── TOOLBAR MOBILE ── */
+    #gb-toolbar {
+        top: auto !important;
+        bottom: 12px !important;
+        right: 12px !important;
+        left: auto !important;
+        padding: 6px 14px !important;
+        border-radius: 24px !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+    }
+    /* Esconde "Logado como..." no mobile */
+    #gb-user-info {
+        display: none !important;
+    }
+    /* Toggle switch: tamanho adequado */
+    #gb-toolbar .sw {
+        width: 48px !important;
+        height: 28px !important;
+    }
+    #gb-toolbar .sw .tk::before {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    /* ── FILE UPLOADER COMPACTO ── */
+    div[data-testid="stFileUploader"] {
+        padding: 20px 16px !important;
+        border-radius: 14px !important;
+    }
+
+    /* ── DATAFRAME SCROLL ── */
+    .stDataFrame {
+        border-radius: 12px !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* ── DIVIDERS: menos espaço ── */
+    hr {
+        margin: 16px 0 !important;
+    }
+
+    /* ── EXPANDERS MOBILE ── */
+    details[data-testid="stExpander"] {
+        border-radius: 12px !important;
+    }
+    details[data-testid="stExpander"] summary {
+        min-height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 12px 16px !important;
+    }
+
+    /* ── PAGE LINK BUTTONS ── */
+    a[data-testid="stPageLink-NavLink"] {
+        min-height: 48px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 12px 16px !important;
+    }
+
+    /* ── ANIMATIONS: reduzir para performance ── */
+    .animate-in {
+        animation-duration: 0.2s !important;
+    }
+
+    /* ── Reduce heavy shadows ── */
+    div[data-testid="stMetric"],
+    .stDataFrame,
+    div[data-testid="stFileUploader"] {
+        box-shadow: 0 2px 8px var(--gb-shadow) !important;
+    }
+}
+
+/* ── Tablets (769px - 1024px) ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+        min-width: 30% !important;
+    }
+
+    .main-header {
+        padding: 22px 28px !important;
+    }
+
+    div[data-testid="stPopoverBody"] {
+        width: 420px !important;
+        max-width: 90vw !important;
+    }
+}

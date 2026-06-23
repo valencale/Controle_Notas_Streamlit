@@ -16,7 +16,7 @@ st.set_page_config(
     page_title="Gestão Logística — Armazém",
     page_icon="🏭",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 if st.query_params.get("logout") == "1":
@@ -63,6 +63,8 @@ def _inject_ui_enhancements(is_logged_in: bool, username: str, role: str):
         /* Toolbar container – background so text is always visible */
         '#gb-toolbar{position:fixed;top:6px;right:76px;z-index:999990;display:flex;align-items:center;gap:6px;font-family:Inter,-apple-system,sans-serif;background:rgba(12,26,20,.85);backdrop-filter:blur(8px);padding:4px 12px;border-radius:10px;border:1px solid rgba(16,185,129,.2);}',
         'html.gb-light #gb-toolbar{background:rgba(236,253,245,.9);border-color:rgba(16,185,129,.25);}',
+        /* Mobile toolbar: bottom-right, hide user info */
+        '@media(max-width:768px){#gb-toolbar{top:auto!important;bottom:12px!important;right:12px!important;padding:6px 14px!important;border-radius:24px!important;box-shadow:0 4px 20px rgba(0,0,0,.35)!important;}#gb-user-info{display:none!important;}#gb-toolbar .sw{width:48px!important;height:28px!important;}}',
         '#gb-toolbar *{color:#f0fdf4 !important;}',
         'html.gb-light #gb-toolbar *{color:#064e3b !important;}',
         '#gb-toolbar a{color:#fff !important;}',
@@ -81,6 +83,8 @@ def _inject_ui_enhancements(is_logged_in: bool, username: str, role: str):
         '[data-gb-chat="1"]{position:relative !important;width:0 !important;height:0 !important;min-width:0 !important;min-height:0 !important;padding:0 !important;margin:0 !important;overflow:visible !important;display:block !important;}',
         '[data-gb-chat="1"] > button, [data-gb-chat="1"] > div > button{position:fixed !important;top:8px !important;left:60px !important;right:auto !important;z-index:999991 !important;border-radius:50% !important;width:36px !important;height:36px !important;min-height:0 !important;padding:0 !important;background:linear-gradient(135deg,#10b981,#047857) !important;color:#fff !important;border:none !important;box-shadow:0 2px 8px rgba(0,0,0,.25) !important;display:flex !important;align-items:center !important;justify-content:center !important;cursor:pointer !important;}',
         '[data-gb-chat="1"] > button p, [data-gb-chat="1"] > div > button p{font-size:18px !important;margin:0 !important;line-height:1 !important;}',
+        /* Mobile chat button: larger touch target */
+        '@media(max-width:768px){[data-gb-chat="1"]>button,[data-gb-chat="1"]>div>button{width:48px!important;height:48px!important;top:10px!important;}[data-gb-chat="1"]>button p,[data-gb-chat="1"]>div>button p{font-size:22px!important;}}',
 
         /* ── Popover Body: DARK ── */
         'div[data-testid="stPopoverBody"]{background-color:#0f2a1e !important;background:#0f2a1e !important;border:1px solid rgba(16,185,129,.25) !important;border-radius:16px !important;box-shadow:0 8px 32px rgba(0,0,0,.4) !important;width:380px !important;max-width:90vw !important;}',
