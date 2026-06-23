@@ -69,6 +69,8 @@ armazem_venv/
 *_cache.csv
 ocorrencias_gia.txt
 entregas_cache.*
+SINCRONIZAR_CLOUD.bat
+*.bat
 
 # Pastas de Inteligência Artificial e Agente Local
 plugins/
