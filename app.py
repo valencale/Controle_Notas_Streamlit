@@ -352,13 +352,20 @@ with st.sidebar:
             # -- Atualizar Cache de Entregas --
             if st.button("🔄 Atualizar Cache Entregas", use_container_width=True,
                          help="Força a leitura do Relatório de Entregas mais recente (XLSB)"):
-                import subprocess
-                with st.spinner("Extraindo dados do XLSB... (aprox 20s)"):
+                import subprocess, platform
+                with st.spinner("Extraindo dados do XLSB..."):
                     try:
-                        subprocess.run(
-                            ["powershell", "-ExecutionPolicy", "Bypass", "-File", "scratch/convert_xlsb_xlsx.ps1"],
-                            check=True
-                        )
+                        if platform.system() == "Windows":
+                            # No Windows, usa o script PowerShell para converter via COM
+                            subprocess.run(
+                                ["powershell", "-ExecutionPolicy", "Bypass", "-File", "scratch/convert_xlsb_xlsx.ps1"],
+                                check=True
+                            )
+                        else:
+                            # No Linux (Streamlit Cloud), apaga cache antigo e usa pyxlsb direto
+                            cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "entregas_cache.xlsx")
+                            if os.path.exists(cache_path):
+                                os.remove(cache_path)
                         st.cache_data.clear()
                         st.rerun()
                     except Exception as e:
