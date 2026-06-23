@@ -360,9 +360,26 @@ with st.sidebar:
                 with st.spinner("Extraindo dados do XLSB..."):
                     try:
                         if platform.system() == "Windows":
-                            # No Windows, usa o script PowerShell para converter via COM
+                            # No Windows, usa PowerShell para converter via COM, pegando o diretório dinamicamente
+                            base_dir = os.path.dirname(os.path.abspath(__file__))
+                            ps_script = f"""
+                            $excel = New-Object -ComObject Excel.Application
+                            $excel.Visible = $false
+                            $excel.DisplayAlerts = $false
+                            try {{
+                                $files = Get-ChildItem -LiteralPath '{base_dir}' -Filter '*RELAT*ENTREGAS*.xlsb'
+                                if ($files.Count -eq 0) {{ throw 'XLSB não encontrado na raiz.' }}
+                                $wb = $excel.Workbooks.Open($files[0].FullName, $false, $true)
+                                $xlsxPath = Join-Path '{base_dir}' 'entregas_cache.xlsx'
+                                $wb.SaveAs($xlsxPath, 51)
+                                $wb.Close($false)
+                            }} finally {{
+                                $excel.Quit()
+                                [System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel) | Out-Null
+                            }}
+                            """
                             subprocess.run(
-                                ["powershell", "-ExecutionPolicy", "Bypass", "-File", "scratch/convert_xlsb_xlsx.ps1"],
+                                ["powershell", "-Command", ps_script],
                                 check=True
                             )
                         else:
