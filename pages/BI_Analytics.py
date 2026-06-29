@@ -346,22 +346,30 @@ c_pareto, c_anomaly = st.columns(2)
 
 # ── Pareto de Remetentes ──
 with c_pareto:
+    pareto_metric = st.radio("Métrica do Pareto:", ["Quantidade (NFs)", "Valor (R$)"], horizontal=True, key="pareto_radio")
+    
     rem_agg = (
         df_f.groupby("REMETENTE")
         .agg(TOTAL_NFS=("NOTA_FISCAL", "count"), VALOR=("VALOR_NOTA", "sum"))
         .reset_index()
-        .sort_values("TOTAL_NFS", ascending=False)
     )
-    if not rem_agg.empty:
-        rem_agg["PCT_ACUM"] = rem_agg["TOTAL_NFS"].cumsum() / rem_agg["TOTAL_NFS"].sum() * 100
+    
+    sort_col = "TOTAL_NFS" if pareto_metric == "Quantidade (NFs)" else "VALOR"
+    y_title = "Total NFs" if pareto_metric == "Quantidade (NFs)" else "Valor (R$)"
+    y_format = "NFs: %{y}" if pareto_metric == "Quantidade (NFs)" else "Valor: R$ %{y:,.2f}"
+    
+    rem_agg = rem_agg.sort_values(sort_col, ascending=False)
+    
+    if not rem_agg.empty and rem_agg[sort_col].sum() > 0:
+        rem_agg["PCT_ACUM"] = rem_agg[sort_col].cumsum() / rem_agg[sort_col].sum() * 100
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
-            x=rem_agg["REMETENTE"], y=rem_agg["TOTAL_NFS"],
-            name="NFs",
+            x=rem_agg["REMETENTE"], y=rem_agg[sort_col],
+            name=y_title,
             marker_color=COLOR_ACCENT,
             marker_cornerradius=6,
-            hovertemplate="<b>%{x}</b><br>NFs: %{y}<extra></extra>",
+            hovertemplate=f"<b>%{{x}}</b><br>{y_format}<extra></extra>",
         ))
         fig.add_trace(go.Scatter(
             x=rem_agg["REMETENTE"], y=rem_agg["PCT_ACUM"],
@@ -378,8 +386,8 @@ with c_pareto:
         pareto_layout = {k: v for k, v in PLOTLY_LAYOUT.items() if k not in ("yaxis",)}
         fig.update_layout(
             **pareto_layout,
-            title="Pareto — Maiores Remetentes",
-            yaxis=dict(title="Total NFs", gridcolor="rgba(16,185,129,0.08)"),
+            title=f"Pareto — {y_title}",
+            yaxis=dict(title=y_title, gridcolor="rgba(16,185,129,0.08)"),
             yaxis2=dict(title="% Acumulado", overlaying="y", side="right",
                         range=[0, 105], gridcolor="rgba(0,0,0,0)"),
             height=420,
