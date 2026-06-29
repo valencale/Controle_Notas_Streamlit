@@ -375,8 +375,9 @@ with c_pareto:
         fig.add_hline(y=80, yref="y2", line_dash="dash",
                       line_color="rgba(239,68,68,0.5)", annotation_text="80%",
                       annotation_position="top right")
+        pareto_layout = {k: v for k, v in PLOTLY_LAYOUT.items() if k not in ("yaxis",)}
         fig.update_layout(
-            **PLOTLY_LAYOUT,
+            **pareto_layout,
             title="Pareto — Maiores Remetentes",
             yaxis=dict(title="Total NFs", gridcolor="rgba(16,185,129,0.08)"),
             yaxis2=dict(title="% Acumulado", overlaying="y", side="right",
