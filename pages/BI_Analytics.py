@@ -330,6 +330,115 @@ with c_month:
     else:
         st.info("Sem dados mensais para exibir.")
 
+# ── Evolução Financeira ──
+st.markdown(
+    '<div style="color: #f59e0b; font-size: 13px; font-weight: 700; '
+    'text-transform: uppercase; letter-spacing: 1px; margin: 16px 0 12px 0;">'
+    '💰 Evolução Financeira</div>',
+    unsafe_allow_html=True,
+)
+
+cf_week, cf_month = st.columns(2)
+
+# ── Valor + Frete Semanal ──
+with cf_week:
+    df_week_fin = df_f.copy()
+    df_week_fin["SEMANA"] = df_week_fin["DATA"].dt.to_period("W").apply(lambda r: r.start_time)
+    weekly_fin = df_week_fin.groupby("SEMANA").agg(
+        VALOR=("VALOR_NOTA", "sum"),
+        FRETE=("FRETE", "sum"),
+    ).reset_index().sort_values("SEMANA")
+
+    if not weekly_fin.empty:
+        weekly_fin["SEMANA_STR"] = weekly_fin["SEMANA"].dt.strftime("%d/%m")
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=weekly_fin["SEMANA_STR"], y=weekly_fin["VALOR"],
+            name="Valor NFs",
+            marker_color="#f59e0b",
+            marker_cornerradius=6,
+            hovertemplate="<b>Semana:</b> %{x}<br><b>Valor:</b> R$ %{y:,.2f}<extra></extra>",
+        ))
+        fig.add_trace(go.Bar(
+            x=weekly_fin["SEMANA_STR"], y=weekly_fin["FRETE"],
+            name="Frete",
+            marker_color="#10b981",
+            marker_cornerradius=6,
+            hovertemplate="<b>Semana:</b> %{x}<br><b>Frete:</b> R$ %{y:,.2f}<extra></extra>",
+        ))
+        fig.update_layout(
+            **PLOTLY_LAYOUT,
+            title="Valor & Frete por Semana",
+            barmode="group",
+            height=400,
+            yaxis_title="R$",
+            xaxis_title="Semana (início)",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Sem dados financeiros semanais.")
+
+# ── Valor + Frete Mensal ──
+with cf_month:
+    # Reutiliza get_summary_by_month mas precisa de VALOR e FRETE
+    months_order = {
+        "JAN": 1, "FEV": 2, "MAR": 3, "ABR": 4, "MAI": 5, "JUN": 6,
+        "JUL": 7, "AGO": 8, "SET": 9, "OUT": 10, "NOV": 11, "DEZ": 12
+    }
+    sm_fin = df_f.groupby("MES").agg(
+        VALOR=("VALOR_NOTA", "sum"),
+        FRETE=("FRETE", "sum"),
+    ).reset_index()
+    sm_fin["_order"] = sm_fin["MES"].str.upper().map(months_order).fillna(99)
+    sm_fin = sm_fin.sort_values("_order").drop(columns=["_order"]).reset_index(drop=True)
+
+    if not sm_fin.empty:
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            x=sm_fin["MES"], y=sm_fin["VALOR"],
+            name="Valor NFs",
+            marker_color="#f59e0b",
+            marker_cornerradius=6,
+            text=sm_fin["VALOR"].apply(lambda v: f"R$ {v:,.0f}".replace(",", ".")),
+            textposition="outside",
+            hovertemplate="<b>Mês:</b> %{x}<br><b>Valor:</b> R$ %{y:,.2f}<extra></extra>",
+        ))
+        fig.add_trace(go.Bar(
+            x=sm_fin["MES"], y=sm_fin["FRETE"],
+            name="Frete",
+            marker_color="#10b981",
+            marker_cornerradius=6,
+            text=sm_fin["FRETE"].apply(lambda v: f"R$ {v:,.0f}".replace(",", ".")),
+            textposition="outside",
+            hovertemplate="<b>Mês:</b> %{x}<br><b>Frete:</b> R$ %{y:,.2f}<extra></extra>",
+        ))
+        fig.update_layout(
+            **PLOTLY_LAYOUT,
+            title="Valor & Frete por Mês",
+            barmode="group",
+            height=400,
+            yaxis_title="R$",
+            xaxis_title="Mês",
+        )
+        fig.update_xaxes(categoryorder='array', categoryarray=sm_fin["MES"])
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Sem dados financeiros mensais.")
+
+# ── KPIs financeiros resumo ──
+frete_total = df_f["FRETE"].sum()
+ticket_medio = valor_total / total_nfs if total_nfs > 0 else 0
+pct_frete = (frete_total / valor_total * 100) if valor_total > 0 else 0
+
+fk1, fk2, fk3 = st.columns(3)
+with fk1:
+    st.markdown(_bi_card("Frete Total", f"R$ {frete_total:,.0f}".replace(",", "."), "#10b981", "🚛"), unsafe_allow_html=True)
+with fk2:
+    st.markdown(_bi_card("Ticket Médio / NF", f"R$ {ticket_medio:,.2f}".replace(",", "."), "#f59e0b", "🎫"), unsafe_allow_html=True)
+with fk3:
+    color_pct = "#10b981" if pct_frete < 10 else "#f59e0b" if pct_frete < 15 else "#ef4444"
+    st.markdown(_bi_card("% Frete / Valor", f"{pct_frete:.1f}%", color_pct, "📊"), unsafe_allow_html=True)
+
 st.markdown("---")
 
 # ══════════════════════════════════════════════════════════════
