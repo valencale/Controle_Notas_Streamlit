@@ -548,6 +548,138 @@ with c_anomaly:
 st.markdown("---")
 
 # ══════════════════════════════════════════════════════════════
+# 3B. COMPARATIVO ENTRE REMETENTES
+# ══════════════════════════════════════════════════════════════
+st.markdown(
+    '<div style="color: #33CCFF; font-size: 13px; font-weight: 700; '
+    'text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">'
+    '🔄 Comparativo entre Remetentes</div>',
+    unsafe_allow_html=True,
+)
+
+# Agregar métricas por remetente
+rem_comp = (
+    df_f.groupby("REMETENTE")
+    .agg(
+        NFs=("NOTA_FISCAL", "count"),
+        Peso_kg=("PESO", "sum"),
+        Volumes=("VOLUMES", "sum"),
+        Valor_R=("VALOR_NOTA", "sum"),
+        Frete_R=("FRETE", "sum"),
+        Clientes=("CLIENTE", "nunique"),
+        UFs=("UF", "nunique"),
+    )
+    .reset_index()
+    .sort_values("NFs", ascending=False)
+)
+rem_comp["Ticket_Medio"] = (rem_comp["Valor_R"] / rem_comp["NFs"]).round(2)
+rem_comp["Peso_Medio_NF"] = (rem_comp["Peso_kg"] / rem_comp["NFs"]).round(1)
+rem_comp["Pct_Frete"] = ((rem_comp["Frete_R"] / rem_comp["Valor_R"]) * 100).round(1).fillna(0)
+
+cr_radar, cr_bars = st.columns(2)
+
+# ── Radar comparativo ──
+with cr_radar:
+    if len(rem_comp) >= 2:
+        # Normaliza métricas para escala 0-100 para o radar
+        radar_metrics = ["NFs", "Peso_kg", "Valor_R", "Frete_R", "Clientes", "Volumes"]
+        radar_labels = ["Qtd NFs", "Peso Total", "Valor Total", "Frete Total", "Clientes Únicos", "Volumes"]
+
+        fig = go.Figure()
+        radar_colors = ["#10b981", "#33CCFF", "#f59e0b", "#6366f1", "#ec4899", "#ef4444"]
+
+        for i, (_, row) in enumerate(rem_comp.iterrows()):
+            # Normaliza cada métrica pela máxima do grupo
+            values = []
+            for m in radar_metrics:
+                max_val = rem_comp[m].max()
+                values.append((row[m] / max_val * 100) if max_val > 0 else 0)
+            values.append(values[0])  # fechar o polígono
+
+            fig.add_trace(go.Scatterpolar(
+                r=values,
+                theta=radar_labels + [radar_labels[0]],
+                fill='toself',
+                name=row["REMETENTE"],
+                line=dict(color=radar_colors[i % len(radar_colors)], width=2),
+                opacity=0.7,
+            ))
+
+        fig.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Inter, sans-serif", color="#cbd5e1", size=12),
+            title=dict(text="Radar — Perfil dos Remetentes", font=dict(size=17, color="#f8fafc")),
+            polar=dict(
+                bgcolor="rgba(0,0,0,0)",
+                radialaxis=dict(visible=True, range=[0, 105], gridcolor="rgba(16,185,129,0.1)"),
+                angularaxis=dict(gridcolor="rgba(16,185,129,0.1)"),
+            ),
+            legend=dict(bgcolor="rgba(0,0,0,0)", orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5),
+            height=450,
+            margin=dict(l=40, r=40, t=60, b=60),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Necessário ao menos 2 remetentes para comparar.")
+
+# ── Evolução mensal por remetente ──
+with cr_bars:
+    months_order_comp = {
+        "JAN": 1, "FEV": 2, "MAR": 3, "ABR": 4, "MAI": 5, "JUN": 6,
+        "JUL": 7, "AGO": 8, "SET": 9, "OUT": 10, "NOV": 11, "DEZ": 12
+    }
+    rem_month = df_f.groupby(["MES", "REMETENTE"]).agg(
+        NFs=("NOTA_FISCAL", "count"),
+        Valor=("VALOR_NOTA", "sum"),
+    ).reset_index()
+    rem_month["_order"] = rem_month["MES"].str.upper().map(months_order_comp).fillna(99)
+    rem_month = rem_month.sort_values("_order").drop(columns=["_order"])
+
+    if not rem_month.empty:
+        metric_evo = st.radio("Métrica:", ["NFs", "Valor (R$)"], horizontal=True, key="rem_evo_radio")
+        y_col = "NFs" if metric_evo == "NFs" else "Valor"
+
+        fig = px.bar(
+            rem_month, x="MES", y=y_col, color="REMETENTE",
+            barmode="group",
+            color_discrete_sequence=["#10b981", "#33CCFF", "#f59e0b", "#6366f1", "#ec4899", "#ef4444"],
+            title=f"Evolução Mensal por Remetente — {metric_evo}",
+            labels={y_col: metric_evo, "MES": "Mês", "REMETENTE": "Remetente"},
+        )
+        fig.update_traces(marker_cornerradius=5)
+        fig.update_layout(**PLOTLY_LAYOUT, height=450)
+        fig.update_xaxes(categoryorder='array', categoryarray=sorted(
+            rem_month["MES"].unique(), key=lambda m: months_order_comp.get(m.upper(), 99)
+        ))
+        st.plotly_chart(fig, use_container_width=True)
+
+# ── Tabela comparativa detalhada ──
+with st.expander("📋 Tabela comparativa completa"):
+    display_comp = rem_comp[["REMETENTE", "NFs", "Peso_kg", "Volumes", "Valor_R",
+                              "Frete_R", "Clientes", "UFs", "Ticket_Medio",
+                              "Peso_Medio_NF", "Pct_Frete"]].copy()
+    display_comp.columns = ["Remetente", "NFs", "Peso (kg)", "Volumes", "Valor (R$)",
+                             "Frete (R$)", "Clientes", "UFs", "Ticket Médio",
+                             "Peso Médio/NF", "% Frete"]
+    st.dataframe(
+        display_comp.style.format({
+            "Peso (kg)": "{:,.0f}",
+            "Volumes": "{:,.0f}",
+            "Valor (R$)": "R$ {:,.2f}",
+            "Frete (R$)": "R$ {:,.2f}",
+            "Ticket Médio": "R$ {:,.2f}",
+            "Peso Médio/NF": "{:,.1f} kg",
+            "% Frete": "{:.1f}%",
+        }).background_gradient(subset=["NFs", "Valor (R$)"], cmap="Greens"),
+        use_container_width=True,
+        height=250,
+    )
+
+st.markdown("---")
+
+# ══════════════════════════════════════════════════════════════
 # 4. VISÃO POR CLIENTES
 # ══════════════════════════════════════════════════════════════
 st.markdown(
