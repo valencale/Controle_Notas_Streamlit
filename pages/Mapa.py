@@ -294,23 +294,26 @@ for _, row in uf_agg.iterrows():
         )
         heat_data.append([coords[0], coords[1], int(row["NFs"]) * 0.3])
 
-# Criar mapa Folium
+# Criar mapa Folium (tiles=None para esconder nome no LayerControl)
 m = folium.Map(
     location=MAP_CENTER,
     zoom_start=10,
-    tiles="CartoDB dark_matter",
+    tiles=None,
     control_scale=True,
 )
+folium.TileLayer("CartoDB dark_matter", name="Mapa Base").add_to(m)
 
-# Camada de calor
+# Camada de calor (dentro de FeatureGroup nomeado)
 if heat_data:
+    fg_heat = folium.FeatureGroup(name="🔥 Mapa de Calor")
     HeatMap(
         heat_data,
         radius=25,
         blur=18,
         max_zoom=13,
         gradient={0.2: '#10b981', 0.4: '#06d6a0', 0.6: '#f59e0b', 0.8: '#ef4444', 1.0: '#dc2626'},
-    ).add_to(m)
+    ).add_to(fg_heat)
+    fg_heat.add_to(m)
 
 # Marcadores dos bairros com volume
 if marker_data:
@@ -392,7 +395,7 @@ try:
                     location=[coords[0], coords[1]],
                     popup=folium.Popup(popup_html, max_width=300),
                     tooltip=f"#{row['PEDIDO']} — {row['CLIENTE']}",
-                    icon=folium.Icon(color=color, icon="info-sign"),
+                    icon=folium.Icon(color=color, icon="home", prefix="glyphicon"),
                 ).add_to(fg_pedidos)
 
         if geocoded_count > 0:
