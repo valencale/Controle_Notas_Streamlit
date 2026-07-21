@@ -28,7 +28,8 @@ logger = logging.getLogger(__name__)
 
 COLUNAS_SAIDA = [
     'MES', 'Data', 'Veiculo', 'Operacao', 'Remetente', 'Cliente',
-    'Bairro', 'UF', 'Nota_Fiscal', 'Pedido', 'Peso', 'Volumes', 'Valor_Nota'
+    'Bairro', 'UF', 'Nota_Fiscal', 'Pedido', 'Peso', 'Volumes', 'Valor_Nota',
+    'DATA FATURA', 'DATA ENTREGA',
 ]
 
 MES_SIGLAS = {
@@ -544,6 +545,8 @@ def extrair_danfe(arquivo) -> dict:
         'Peso': peso,
         'Volumes': volumes,
         'Valor_Nota': valor_nota,
+        'DATA FATURA': data_fmt or "",   # Usa data de emissão como data de fatura
+        'DATA ENTREGA': "",              # Preenchido manualmente ou via OBS
     }
 
 
