@@ -20,6 +20,8 @@ from typing import Optional
 import pandas as pd
 import pdfplumber
 
+from modules.obs_date_extractor import extract_dates_from_obs
+
 logger = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════════════════════
@@ -531,22 +533,54 @@ def extrair_danfe(arquivo) -> dict:
     bairro = _extrair_bairro(texto_completo, cliente)
     pedido_associado = _extrair_pedido_associado(texto_completo)
 
+    # --- Extrair datas de FAT/ENTREGA das Informações Complementares ---
+    # A seção "DADOS ADICIONAIS / INFORMAÇÕES COMPLEMENTARES" da DANFE
+    # contém os mesmos padrões do campo OBS dos Mapas de Separação:
+    # ex: "MCS:142791-113260292 FAT 01/6 ENTREGA TABOAO 03/06"
+    dates = extract_dates_from_obs(texto_completo)
+
+    # Fallback: se não encontrou DATA FATURA no texto, usa data de emissão
+    data_fatura = dates["DATA FATURA"]
+    if data_fatura:
+        # Formata como dd/mmm (ex: "01/jun") para consistência com Data
+        from datetime import date as _date_type
+        if isinstance(data_fatura, _date_type):
+            meses_abrev = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',
+                          7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'}
+            data_fatura_fmt = f"{data_fatura.day:02d}/{meses_abrev[data_fatura.month]}"
+        else:
+            data_fatura_fmt = str(data_fatura)
+    else:
+        data_fatura_fmt = data_fmt or ""
+
+    data_entrega = dates["DATA ENTREGA"]
+    if data_entrega:
+        from datetime import date as _date_type
+        if isinstance(data_entrega, _date_type):
+            meses_abrev = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',
+                          7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'}
+            data_entrega_fmt = f"{data_entrega.day:02d}/{meses_abrev[data_entrega.month]}"
+        else:
+            data_entrega_fmt = str(data_entrega)
+    else:
+        data_entrega_fmt = ""
+
     return {
         'MES': mes_sigla or "",
         'Data': data_fmt or "",
-        'Veiculo': "",         # Preenchido futuramente
-        'Operacao': "",        # Preenchido futuramente
+        'Veiculo': "",
+        'Operacao': "",
         'Remetente': remetente,
         'Cliente': cliente,
         'Bairro': bairro,
-        'UF': "SP",            # Valor estático
+        'UF': "SP",
         'Nota_Fiscal': nota_fiscal,
         'Pedido': pedido_associado,
         'Peso': peso,
         'Volumes': volumes,
         'Valor_Nota': valor_nota,
-        'DATA FATURA': data_fmt or "",   # Usa data de emissão como data de fatura
-        'DATA ENTREGA': "",              # Preenchido manualmente ou via OBS
+        'DATA FATURA': data_fatura_fmt,
+        'DATA ENTREGA': data_entrega_fmt,
     }
 
 
