@@ -478,6 +478,28 @@ def _extrair_pedido_associado(texto: str) -> str:
     return ""
 
 
+def _extrair_info_complementar(texto: str) -> str:
+    """
+    Extrai a seção 'INFORMAÇÕES COMPLEMENTARES' / 'DADOS ADICIONAIS' da DANFE.
+
+    Essa seção contém os mesmos padrões do campo OBS dos Mapas de Separação:
+    ex: "MCS:142791-113260292 FAT 01/6 ENTREGA TABOAO 03/06"
+
+    Isolar essa seção evita falsos positivos com headers da DANFE como
+    'DATA DA ENTRADA', 'FATURA VENCIMENTO VALOR', etc.
+    """
+    # Padrão: o layout da DANFE é:
+    #   DADOS ADICIONAIS\n
+    #   INFORMAÇÕES COMPLEMENTARES RESERVADO AO FISCO\n
+    #   [conteúdo real aqui - MCS:..., FAT..., ENTREGA..., etc.]
+    # Captura tudo após a linha de header até o fim do texto.
+    padrao = r'(?:INFORMA.{1,4}ES\s+COMPLEMENTARES|DADOS\s+ADICIONAIS).*?(?:RESERVADO\s+AO\s+FISCO)?\s*\n(.*)'
+    match = re.search(padrao, texto, re.IGNORECASE | re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return ""
+
+
 # ══════════════════════════════════════════════════════════════
 # FUNÇÃO PRINCIPAL DE EXTRAÇÃO
 # ══════════════════════════════════════════════════════════════
@@ -534,36 +556,22 @@ def extrair_danfe(arquivo) -> dict:
     pedido_associado = _extrair_pedido_associado(texto_completo)
 
     # --- Extrair datas de FAT/ENTREGA das Informações Complementares ---
-    # A seção "DADOS ADICIONAIS / INFORMAÇÕES COMPLEMENTARES" da DANFE
-    # contém os mesmos padrões do campo OBS dos Mapas de Separação:
-    # ex: "MCS:142791-113260292 FAT 01/6 ENTREGA TABOAO 03/06"
-    dates = extract_dates_from_obs(texto_completo)
+    # Isola apenas a seção "INFORMAÇÕES COMPLEMENTARES" / "DADOS ADICIONAIS"
+    # para evitar falsos positivos com headers da DANFE (ENTRADA, FATURA VENCIMENTO)
+    info_complementar = _extrair_info_complementar(texto_completo)
+    dates = extract_dates_from_obs(info_complementar)
 
-    # Fallback: se não encontrou DATA FATURA no texto, usa data de emissão
-    data_fatura = dates["DATA FATURA"]
-    if data_fatura:
-        # Formata como dd/mmm (ex: "01/jun") para consistência com Data
-        from datetime import date as _date_type
-        if isinstance(data_fatura, _date_type):
-            meses_abrev = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',
-                          7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'}
-            data_fatura_fmt = f"{data_fatura.day:02d}/{meses_abrev[data_fatura.month]}"
-        else:
-            data_fatura_fmt = str(data_fatura)
-    else:
-        data_fatura_fmt = data_fmt or ""
+    # Formatação helper
+    def _fmt_date(d):
+        from datetime import date as _dt
+        if isinstance(d, _dt):
+            abrev = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',
+                     7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'}
+            return f"{d.day:02d}/{abrev[d.month]}"
+        return str(d) if d else ""
 
-    data_entrega = dates["DATA ENTREGA"]
-    if data_entrega:
-        from datetime import date as _date_type
-        if isinstance(data_entrega, _date_type):
-            meses_abrev = {1:'jan',2:'fev',3:'mar',4:'abr',5:'mai',6:'jun',
-                          7:'jul',8:'ago',9:'set',10:'out',11:'nov',12:'dez'}
-            data_entrega_fmt = f"{data_entrega.day:02d}/{meses_abrev[data_entrega.month]}"
-        else:
-            data_entrega_fmt = str(data_entrega)
-    else:
-        data_entrega_fmt = ""
+    data_fatura_fmt = _fmt_date(dates["DATA FATURA"]) or data_fmt or ""
+    data_entrega_fmt = _fmt_date(dates["DATA ENTREGA"])
 
     return {
         'MES': mes_sigla or "",

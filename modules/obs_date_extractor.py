@@ -29,10 +29,8 @@ def extract_dates_from_obs(obs_text: str) -> dict:
 
     # Padrões regex: ignora palavras intermediárias (como EMBU, URGENTE)
     # até encontrar a data no formato dd/mm ou dd/mm/aaaa
-    # NOTA: FAT(?:URA|URAR) NÃO deve matchar "FATURA VENCIMENTO" (header de tabela DANFE)
-    #       ENT(?:REGA) NÃO deve matchar "ENTRADA" (header de tabela DANFE)
-    padrao_fatura = r"(?i)\bFAT(?:URAR|URA(?!\s+VENCIMENTO)|\.)?\s+.*?(\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)"
-    padrao_entrega = r"(?i)\bENTREGA\s+.*?(\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)"
+    padrao_fatura = r"(?i)FAT(?:URA|URAR|\.)?\s+.*?(\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)"
+    padrao_entrega = r"(?i)ENTREGA\s+.*?(\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?)"
 
     # Busca Fatura
     match_fatura = re.search(padrao_fatura, obs_text)
