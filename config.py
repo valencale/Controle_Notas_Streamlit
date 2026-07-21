@@ -31,18 +31,20 @@ DATA_START_ROW = 11
 
 # Column mapping (1-indexed as openpyxl uses)
 COLUMNS = {
-    "DATA": 2,       # B
-    "CLIENTE": 3,    # C
-    "PEDIDO": 4,     # D
-    "EMPRESA": 5,    # E
-    "NF": 6,         # F — Nota Fiscal
-    "STATUS": 7,     # G
-    "OBS": 8,        # H
-    "ENDERECO": 9,   # I — Endereço (extraído de PDFs)
+    "DATA": 2,           # B
+    "CLIENTE": 3,        # C
+    "PEDIDO": 4,         # D
+    "EMPRESA": 5,        # E
+    "NF": 6,             # F — Nota Fiscal
+    "STATUS": 7,         # G
+    "OBS": 8,            # H
+    "ENDERECO": 9,       # I — Endereço (extraído de PDFs)
+    "DATA FATURA": 10,   # J — Data de faturamento (extraída do OBS)
+    "DATA ENTREGA": 11,  # K — Data de entrega (extraída do OBS)
 }
 
 # Column headers in order (for DataFrame conversion)
-COLUMN_NAMES = ["DATA", "CLIENTE", "PEDIDO", "EMPRESA", "NF", "STATUS", "OBS", "ENDERECO"]
+COLUMN_NAMES = ["DATA", "CLIENTE", "PEDIDO", "EMPRESA", "NF", "STATUS", "OBS", "ENDERECO", "DATA FATURA", "DATA ENTREGA"]
 
 # Excel header display names (internal key → Excel header text)
 EXCEL_HEADER_NAMES = {
@@ -54,6 +56,8 @@ EXCEL_HEADER_NAMES = {
     "STATUS": "STATUS",
     "OBS": "OBS",
     "ENDERECO": "ENDERECO",
+    "DATA FATURA": "DATA FATURA",
+    "DATA ENTREGA": "DATA ENTREGA",
 }
 
 # Primary Key column

@@ -268,7 +268,10 @@ def insert_pedido(data: dict) -> bool:
     # Write data
     for col_name, col_idx in COLUMNS.items():
         value = data.get(col_name, "")
-        ws.cell(row=next_row, column=col_idx, value=value)
+        cell = ws.cell(row=next_row, column=col_idx, value=value if value else "")
+        # Aplicar formato de data para colunas de data (compatibilidade BI/Excel)
+        if col_name in ("DATA FATURA", "DATA ENTREGA") and value:
+            cell.number_format = "DD/MM/YYYY"
 
     _save_workbook(wb)
     wb.close()
@@ -570,6 +573,7 @@ def archive_completed() -> int:
         for col_name, col_idx in COLUMNS.items():
             value = ws_dados.cell(row=row_idx, column=col_idx).value
             ws_hist.cell(row=hist_next_row, column=col_idx - 1, value=value)
+        
         hist_next_row += 1
         count += 1
 
@@ -622,6 +626,7 @@ def archive_dispatched() -> int:
         for col_name, col_idx in COLUMNS.items():
             value = ws_dados.cell(row=row_idx, column=col_idx).value
             ws_hist.cell(row=hist_next_row, column=col_idx - 1, value=value)
+        
         hist_next_row += 1
         count += 1
 

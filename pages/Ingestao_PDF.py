@@ -183,6 +183,14 @@ for file_idx, uploaded_file in enumerate(uploaded_files):
                 height=68,
             )
 
+            col6, col7 = st.columns(2)
+            with col6:
+                if extracted.get("DATA FATURA"):
+                    st.info(f"📅 **Fatura:** {extracted['DATA FATURA'].strftime('%d/%m/%Y')}")
+            with col7:
+                if extracted.get("DATA ENTREGA"):
+                    st.info(f"🚚 **Entrega:** {extracted['DATA ENTREGA'].strftime('%d/%m/%Y')}")
+
             # Store the edited data
             all_extracted.append({
                 "key_prefix": key_prefix,
@@ -195,6 +203,8 @@ for file_idx, uploaded_file in enumerate(uploaded_files):
                 "STATUS": edit_status,
                 "OBS": edit_obs,
                 "DATA": datetime.now(),
+                "DATA FATURA": extracted.get("DATA FATURA"),
+                "DATA ENTREGA": extracted.get("DATA ENTREGA"),
             })
 
             # Show raw text toggle
@@ -250,6 +260,8 @@ if all_extracted:
                         "OBS": item["OBS"].strip(),
                         "ENDERECO": item["ENDERECO"].strip(),
                         "NF": "",
+                        "DATA FATURA": item.get("DATA FATURA"),
+                        "DATA ENTREGA": item.get("DATA ENTREGA"),
                     })
                     success_count += 1
                 except ValueError as e:

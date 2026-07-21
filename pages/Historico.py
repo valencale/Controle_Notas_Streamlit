@@ -111,6 +111,10 @@ st.markdown(f"<p style='color: #64748b; font-size: 13px;'>Exibindo {len(filtered
 display_df = filtered_df.copy()
 if "DATA" in display_df.columns:
     display_df["DATA"] = pd.to_datetime(display_df["DATA"], errors="coerce").dt.strftime("%d/%m/%Y")
+if "DATA FATURA" in display_df.columns:
+    display_df["DATA FATURA"] = pd.to_datetime(display_df["DATA FATURA"], errors="coerce").dt.strftime("%d/%m/%Y")
+if "DATA ENTREGA" in display_df.columns:
+    display_df["DATA ENTREGA"] = pd.to_datetime(display_df["DATA ENTREGA"], errors="coerce").dt.strftime("%d/%m/%Y")
 
 st.dataframe(
     display_df,
@@ -120,6 +124,8 @@ st.dataframe(
         "PEDIDO": st.column_config.TextColumn("📋 Pedido", width="small"),
         "CLIENTE": st.column_config.TextColumn("👤 Cliente", width="medium"),
         "DATA": st.column_config.TextColumn("📅 Data", width="small"),
+        "DATA FATURA": st.column_config.TextColumn("📅 Fatura", width="small"),
+        "DATA ENTREGA": st.column_config.TextColumn("🚚 Entrega", width="small"),
         "EMPRESA": st.column_config.TextColumn("🏢 Empresa", width="small"),
         "STATUS": st.column_config.TextColumn("🔖 Status", width="small"),
         "OBS": st.column_config.TextColumn("📝 Obs", width="medium"),
@@ -158,3 +164,27 @@ if pedido_options:
             st.error(f"❌ Erro no estorno: {e}")
 else:
     st.info("Nenhum pedido disponível para estorno.")
+
+st.markdown("---")
+st.subheader("🔄 Retroalimentar Dados Históricos")
+st.caption("Preenche DATA FATURA, DATA ENTREGA e ENDEREÇO a partir do campo OBS das linhas antigas.")
+
+if st.button("🔄 Iniciar Retropreenchimento", type="primary"):
+    from modules.historico_backfill import backfill_historico
+    progress_bar = st.progress(0, text="Processando histórico...")
+    
+    def update_progress(current, total):
+        if total > 0:
+            progress_bar.progress(current / total, text=f"Processando {current}/{total}...")
+    
+    stats = backfill_historico(progress_callback=update_progress)
+    progress_bar.empty()
+    
+    st.success(
+        f"✅ Retropreenchimento concluído!\n\n"
+        f"- **{stats['total']}** linhas analisadas\n"
+        f"- **{stats['fatura_filled']}** datas de fatura preenchidas\n"
+        f"- **{stats['entrega_filled']}** datas de entrega preenchidas\n"
+        f"- **{stats['endereco_filled']}** endereços preenchidos"
+    )
+    st.cache_data.clear()

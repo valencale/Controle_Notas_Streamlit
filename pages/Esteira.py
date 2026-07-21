@@ -363,15 +363,25 @@ for tab_idx, tab in enumerate(tabs):
                         "📄 NF",
                         width="small",
                     ),
+                    "DATA FATURA": st.column_config.DateColumn(
+                        "📆 Fatura",
+                        format="DD/MM/YYYY",
+                        width="small",
+                    ),
+                    "DATA ENTREGA": st.column_config.DateColumn(
+                        "🚚 Entrega",
+                        format="DD/MM/YYYY",
+                        width="small",
+                    ),
                 },
-                column_order=["🗑️", "DATA", "CLIENTE", "PEDIDO", "EMPRESA", "NF", "STATUS", "OBS", "ENDERECO"],
+                column_order=["🗑️", "DATA", "CLIENTE", "PEDIDO", "EMPRESA", "NF", "STATUS", "OBS", "ENDERECO", "DATA FATURA", "DATA ENTREGA"],
             )
 
             # ── Ações: Salvar + Excluir ──
             act_col1, act_col2, act_col3 = st.columns([1, 1, 3])
 
             # Detectar mudanças (comparar original vs editado cell-by-cell)
-            compare_cols = ["DATA", "CLIENTE", "EMPRESA", "STATUS", "OBS", "ENDERECO", "NF"]
+            compare_cols = ["DATA", "CLIENTE", "EMPRESA", "STATUS", "OBS", "ENDERECO", "NF", "DATA FATURA", "DATA ENTREGA"]
             original_compare = edit_df.drop(columns=["🗑️"]).reset_index(drop=True)
             edited_compare = edited_df.drop(columns=["🗑️"]).reset_index(drop=True)
 

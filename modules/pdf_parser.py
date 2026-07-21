@@ -35,6 +35,8 @@ from typing import Optional
 
 import pdfplumber
 
+from modules.obs_date_extractor import extract_dates_from_obs
+
 # ══════════════════════════════════════════════════════════════
 # LOGGING
 # ══════════════════════════════════════════════════════════════
@@ -297,6 +299,8 @@ def _extract_page_data(page, page_num: int) -> Optional[dict]:
 
     # ── 6. EMPRESA ────────────────────────────────────────
     empresa = _detect_empresa(full_text, page)
+    
+    dates = extract_dates_from_obs(obs_clean)
 
     return {
         "PEDIDO":     pedido,
@@ -305,6 +309,8 @@ def _extract_page_data(page, page_num: int) -> Optional[dict]:
         "ENDERECO":   endereco_final,
         "OBS":        obs_clean[:500] if obs_clean else "",
         "EMPRESA":    empresa,
+        "DATA FATURA": dates["DATA FATURA"],
+        "DATA ENTREGA": dates["DATA ENTREGA"],
     }
 
 
