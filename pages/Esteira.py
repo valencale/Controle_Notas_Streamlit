@@ -291,6 +291,11 @@ for tab_idx, tab in enumerate(tabs):
             # ── Preparar DataFrame para edição ──
             edit_df = display_df.copy()
             edit_df["DATA"] = pd.to_datetime(edit_df["DATA"], errors="coerce")
+
+            # Converter colunas de datas (Excel pode armazená-las como float/serial)
+            for date_col in ["DATA FATURA", "DATA ENTREGA"]:
+                if date_col in edit_df.columns:
+                    edit_df[date_col] = pd.to_datetime(edit_df[date_col], errors="coerce")
             
             # Limpar valores NaN/None para exibição
             for col in ["CLIENTE", "PEDIDO", "EMPRESA", "STATUS", "OBS", "ENDERECO", "NF"]:
